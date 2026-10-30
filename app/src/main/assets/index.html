@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#14532d">
+<title>Meu Controle Financeiro</title>
+<style>
+:root{--green:#166534;--green2:#15803d;--red:#b91c1c;--bg:#f3f6f4;--card:#fff;--text:#17211b;--muted:#68756d;--line:#e4ebe6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--text)}
+header{background:var(--green);color:white;padding:22px 18px 26px;border-radius:0 0 22px 22px}
+header h1{font-size:22px;margin:0 0 5px}
+header p{margin:0;color:#d7f2df;font-size:13px}
+main{max-width:650px;margin:auto;padding:16px}
+.balance{background:white;border-radius:18px;padding:18px;margin-top:-8px;box-shadow:0 5px 18px #163d2410}
+.label{font-size:12px;color:var(--muted)}
+.total{font-size:30px;font-weight:700;margin:7px 0 15px}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.summary>div{padding:12px;border-radius:13px;background:#f5f8f6}
+.summary strong{display:block;font-size:18px;margin-top:6px}
+.income{color:var(--green2)}.expense{color:var(--red)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+button{border:0;border-radius:12px;padding:13px 12px;font-size:15px;font-weight:700;cursor:pointer}
+.primary{background:var(--green);color:white}.secondary{background:#e5efe8;color:var(--green)}
+.panel{background:var(--card);padding:17px;border-radius:16px;margin:14px 0;box-shadow:0 3px 14px #163d2408}
+h2{font-size:17px;margin:0 0 14px}
+form{display:grid;gap:10px}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:white;color:var(--text)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hidden{display:none!important}
+.filters{display:flex;gap:8px;margin-bottom:12px}
+.filters select{flex:1;min-width:0}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item small{display:block;color:var(--muted);margin-top:4px}
+.amount{font-weight:700;white-space:nowrap}
+.delete{background:#fff0f0;color:var(--red);padding:7px 9px;font-size:12px;margin-left:8px}
+.empty{text-align:center;color:var(--muted);font-size:14px;padding:18px 5px}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:10px 0 24px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Meu Controle Financeiro</h1>
+  <p>Organize suas receitas e despesas</p>
+</header>
+<main>
+  <section class="balance">
+    <div class="label">SALDO ATUAL</div>
+    <div class="total" id="balance">R$ 0,00</div>
+    <div class="summary">
+      <div><span class="label">Receitas</span><strong class="income" id="income">R$ 0,00</strong></div>
+      <div><span class="label">Despesas</span><strong class="expense" id="expense">R$ 0,00</strong></div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="primary" id="showIncome">＋ Nova receita</button>
+    <button class="secondary" id="showExpense">－ Nova despesa</button>
+  </div>
+
+  <section class="panel hidden" id="formPanel">
+    <h2 id="formTitle">Novo lançamento</h2>
+    <form id="transactionForm">
+      <input id="description" placeholder="Descrição (ex.: salário, mercado)" maxlength="60" required>
+      <div class="row">
+        <input id="amount" type="number" min="0.01" step="0.01" placeholder="Valor (R$)" required>
+        <input id="date" type="date" required>
+      </div>
+      <div class="row">
+        <select id="category" required></select>
+        <select id="type">
+          <option value="receita">Receita</option>
+          <option value="despesa">Despesa</option>
+        </select>
+      </div>
+      <div class="row">
+        <button type="submit" class="primary">Salvar lançamento</button>
+        <button type="button" class="secondary" id="cancel">Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Histórico de lançamentos</h2>
+    <div class="filters">
+      <select id="monthFilter" aria-label="Filtrar mês"></select>
+      <select id="typeFilter" aria-label="Filtrar tipo">
+        <option value="todos">Todos</option><option value="receita">Receitas</option><option value="despesa">Despesas</option>
+      </select>
+    </div>
+    <div id="transactions"></div>
+  </section>
+  <footer>Seus dados ficam salvos neste aparelho, neste navegador.</footer>
+</main>
+<script>
+const KEY='meu_controle_financeiro_v1';
+const categories={
+ receita:['Salário','Vendas','Serviços','Rendimentos','Outras receitas'],
+ despesa:['Moradia','Mercado','Água e luz','Transporte','Combustível','Saúde','Educação','Lazer','Cartão','Outras despesas']
+};
+let transactions=[];
+try{transactions=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){transactions=[]}
+const $=id=>document.getElementById(id);
+const money=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const today=new Date();
+$('date').value=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+function save(){localStorage.setItem(KEY,JSON.stringify(transactions));render()}
+function setCategories(type){
+  $('category').innerHTML=categories[type].map(c=>`<option>${c}</option>`).join('');
+}
+function openForm(type){
+  $('type').value=type;$('formTitle').textContent=type==='receita'?'Nova receita':'Nova despesa';
+  setCategories(type);$('formPanel').classList.remove('hidden');$('description').focus();
+}
+$('showIncome').onclick=()=>openForm('receita');
+$('showExpense').onclick=()=>openForm('despesa');
+$('type').onchange=()=>setCategories($('type').value);
+$('cancel').onclick=()=>$('formPanel').classList.add('hidden');
+$('transactionForm').onsubmit=e=>{
+  e.preventDefault();
+  const amount=Number($('amount').value);
+  if(!Number.isFinite(amount)||amount<=0){alert('Informe um valor maior que zero.');return}
+  transactions.push({id:Date.now().toString()+Math.random().toString(16).slice(2),description:$('description').value.trim(),amount,date:$('date').value,category:$('category').value,type:$('type').value});
+  save();e.target.reset();$('date').value=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');$('formPanel').classList.add('hidden');
+};
+function initMonths(){
+ const months=[...new Set([today.toISOString().slice(0,7),...transactions.map(t=>t.date.slice(0,7))])].sort().reverse();
+ $('monthFilter').innerHTML='<option value="todos">Todos os meses</option>'+months.map(m=>{let [y,mo]=m.split('-');return `<option value="${m}">${mo}/${y}</option>`}).join('');
+}
+function render(){
+ const month=$('monthFilter').value||'todos',type=$('typeFilter').value||'todos';
+ const list=transactions.filter(t=>(month==='todos'||t.date.startsWith(month))&&(type==='todos'||t.type===type));
+ const inc=list.filter(t=>t.type==='receita').reduce((s,t)=>s+t.amount,0);
+ const exp=list.filter(t=>t.type==='despesa').reduce((s,t)=>s+t.amount,0);
+ $('income').textContent=money(inc);$('expense').textContent=money(exp);$('balance').textContent=money(inc-exp);
+ $('balance').className='total '+(inc-exp<0?'expense':'income');
+ list.sort((a,b)=>b.date.localeCompare(a.date));
+ $('transactions').innerHTML=list.length?list.map(t=>`<div class="item"><div><strong>${escapeHtml(t.description)}</strong><small>${escapeHtml(t.category)} · ${t.date.split('-').reverse().join('/')}</small></div><div style="display:flex;align-items:center"><span class="amount ${t.type==='receita'?'income':'expense'}">${t.type==='receita'?'+':'−'} ${money(t.amount)}</span><button class="delete" data-id="${t.id}" aria-label="Excluir lançamento">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhum lançamento neste filtro.<br>Toque em “Nova receita” ou “Nova despesa” para começar.</div>';
+ document.querySelectorAll('.delete').forEach(b=>b.onclick=()=>{if(confirm('Deseja excluir este lançamento?')){transactions=transactions.filter(t=>t.id!==b.dataset.id);save()}});
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('monthFilter').onchange=render;$('typeFilter').onchange=render;
+initMonths();render();
+</script>
+</body>
+</html>

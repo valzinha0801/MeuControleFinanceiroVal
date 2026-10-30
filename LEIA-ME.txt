@@ -1,0 +1,32 @@
+MEU CONTROLE FINANCEIRO - PROJETO ANDROID
+
+O que está preparado:
+- Aplicativo Android com nome Meu Controle Financeiro.
+- Interface verde e branca.
+- Cadastro de receitas e despesas, categorias, filtros e saldo.
+- Funciona offline.
+- Os lançamentos são guardados no armazenamento local do aplicativo (WebView localStorage).
+- Compatível a partir do Android 8.0 (API 26), incluindo Android 16.
+
+IMPORTANTE SOBRE OS DADOS:
+Os dados ficam no próprio aparelho. Desinstalar o aplicativo ou limpar os dados do app pode apagá-los.
+Este primeiro APK não possui sincronização nem função de backup/exportação.
+
+COMO GERAR O APK SEM INSTALAR PROGRAMAS NO COMPUTADOR:
+1. Entre em https://github.com/ e crie uma conta gratuita ou faça login.
+2. Crie um repositório novo chamado MeuControleFinanceiro.
+3. Extraia este ZIP no computador.
+4. Na página do repositório, use Add file > Upload files e envie os arquivos e pastas que estão dentro desta pasta.
+   Envie também a pasta oculta .github (ela contém a automação de compilação).
+5. Confirme em Commit changes.
+6. Abra a aba Actions do repositório.
+7. Se aparecer uma confirmação para habilitar workflows, confirme.
+8. Abra o workflow "Gerar APK Android" e aguarde ficar verde (concluído).
+9. Abra a execução concluída e, em Artifacts, baixe "MeuControleFinanceiro-APK".
+10. Extraia o ZIP baixado. Dentro dele estará app-debug.apk.
+11. Envie o APK para o Samsung (por cabo USB, Google Drive ou outro meio) e toque no arquivo para instalar.
+12. Se o Android bloquear, autorize a instalação para o aplicativo usado para abrir o arquivo (por exemplo, Meus Arquivos).
+
+OBSERVAÇÃO:
+A compilação acontece nos servidores do GitHub. Não é necessário instalar Android Studio ou Java no computador.
+O APK de depuração é adequado para instalar e testar no seu próprio aparelho. Para publicar na Play Store, será necessária uma versão assinada de lançamento.
